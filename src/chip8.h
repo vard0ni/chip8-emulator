@@ -38,6 +38,21 @@ private:
     std::default_random_engine randomEngine;    // generate random numbers
     std::uniform_int_distribution<uint8_t> randByte; // random between 2 nums
 
+    typedef void (chip8::*Chip8Func)();
+	Chip8Func table[0xF + 1];
+	Chip8Func table0[0xE + 1];
+	Chip8Func table8[0xE + 1];
+	Chip8Func tableE[0xE + 1];
+	Chip8Func tableF[0x65 + 1];
+
+    void Table0();
+	void Table8();
+	void TableE();
+	void TableF();
+
+    // Do nothing
+	void OP_NULL();
+
     // CLS
 	void OP_00E0();
 

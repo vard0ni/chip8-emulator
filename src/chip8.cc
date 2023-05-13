@@ -38,6 +38,61 @@ chip8::chip8()
     // Initialize RNG
     randByte = std::uniform_int_distribution<uint8_t>(0, 255U);
 
+	// Set up function pointer table
+	table[0x0] = &chip8::Table0;
+	table[0x1] = &chip8::OP_1nnn;
+	table[0x2] = &chip8::OP_2nnn;
+	table[0x3] = &chip8::OP_3xkk;
+	table[0x4] = &chip8::OP_4xkk;
+	table[0x5] = &chip8::OP_5xy0;
+	table[0x6] = &chip8::OP_6xkk;
+	table[0x7] = &chip8::OP_7xkk;
+	table[0x8] = &chip8::Table8;
+	table[0x9] = &chip8::OP_9xy0;
+	table[0xA] = &chip8::OP_Annn;
+	table[0xB] = &chip8::OP_Bnnn;
+	table[0xC] = &chip8::OP_Cxkk;
+	table[0xD] = &chip8::OP_Dxyn;
+	table[0xE] = &chip8::TableE;
+	table[0xF] = &chip8::TableF;
+
+	for (size_t i = 0; i <= 0xE; i++)
+	{
+		table0[i] = &chip8::OP_NULL;
+		table8[i] = &chip8::OP_NULL;
+		tableE[i] = &chip8::OP_NULL;
+	}
+
+	table0[0x0] = &chip8::OP_00E0;
+	table0[0xE] = &chip8::OP_00EE;
+
+	table8[0x0] = &chip8::OP_8xy0;
+	table8[0x1] = &chip8::OP_8xy1;
+	table8[0x2] = &chip8::OP_8xy2;
+	table8[0x3] = &chip8::OP_8xy3;
+	table8[0x4] = &chip8::OP_8xy4;
+	table8[0x5] = &chip8::OP_8xy5;
+	table8[0x6] = &chip8::OP_8xy6;
+	table8[0x7] = &chip8::OP_8xy7;
+	table8[0xE] = &chip8::OP_8xyE;
+
+	tableE[0x1] = &chip8::OP_ExA1;
+	tableE[0xE] = &chip8::OP_Ex9E;
+
+	for (size_t i = 0; i <= 0x65; i++)
+	{
+		tableF[i] = &chip8::OP_NULL;
+	}
+
+	tableF[0x07] = &chip8::OP_Fx07;
+	tableF[0x0A] = &chip8::OP_Fx0A;
+	tableF[0x15] = &chip8::OP_Fx15;
+	tableF[0x18] = &chip8::OP_Fx18;
+	tableF[0x1E] = &chip8::OP_Fx1E;
+	tableF[0x29] = &chip8::OP_Fx29;
+	tableF[0x33] = &chip8::OP_Fx33;
+	tableF[0x55] = &chip8::OP_Fx55;
+	tableF[0x65] = &chip8::OP_Fx65;
 }
 
 // function that loads the contents of a ROM file
@@ -71,46 +126,50 @@ void chip8::LoadROM(char const* filename)
 void chip8::emulateCycle()
 {
     // fetch opcode
-    opcode = memory[pc] << 8 | memory[pc + 1];
+    opcode = (memory[pc] << 8u) | memory[pc + 1];
 
-    // decode opcodes
-    switch (opcode & 0xF000)
-    {
-        case 0x0000:
-            switch (opcode & 0X00F)
-            {
-                case 0x0000:    // 0x00E0: Clears the screen
-                    // execute opcode
-                break;
-            
-                case 0X000E:    // 0x00EE: Returns from subroutine 
-                    // execute opcode
-                break;
-        
-                default:
-                    printf("Unknown opcode [0x0000]: 0x%X\n", opcode);
-            }                
-        break;
+	// increment PC before execute anything
+	pc += 2;
 
-        // more opcodes
+    
 
-        case 0X2000:    // 0x2NNN: Calls subroutine at NNN.
-            stack[sp] = pc;        // Store current address in stack
-            ++sp;                    // Increment stack pointer
-            pc = opcode & 0x0FFF;    // Set the program counter to the address at NNN
-        break;
-    }
-
-    // update timers
+    // decrement delay_timer if it's been set
     if (delay_timer > 0)    
         --delay_timer;
 
+	// decrement sound_timer if it's been set
     if (sound_timer > 0)
     {
         if (sound_timer == 1)
             printf("BOOM\n");
         --sound_timer;
     }
+}
+
+void chip8::Table0()
+{
+	((*this).*(table0[opcode & 0x000Fu]))();
+}
+
+void chip8::Table8()
+{
+	((*this).*(table8[opcode & 0x000Fu]))();
+}
+
+void chip8::TableE()
+{
+	((*this).*(tableE[opcode & 0x000Fu]))();
+}
+
+void chip8::TableF()
+{
+	((*this).*(tableF[opcode & 0x00FFu]))();
+}
+
+// Function that does nothing, but will be default function called if proper function pointer isnt set
+void chip8::OP_NULL()
+{
+
 }
 
 // Clear the display. Set the entire video buffer to zeros.
