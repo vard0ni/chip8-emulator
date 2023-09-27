@@ -1,4 +1,4 @@
-# CHIP8 Emulator/Interpreter
+# 👾 Chip-8 Emulator
 A Chip-8 emulator implemented in C++ using SDL2 for graphics and input handling.
 
 ## Introduction
